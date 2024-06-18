@@ -4,15 +4,16 @@ from deepface import DeepFace
 from mpyc.runtime import mpc
 from mpyc.numpy import np
 import face_recognition
+import argparse
 
 secflt = mpc.SecFlt()
 
-async def main():
+async def main(img_path):
     # Initialiser le runtime MPyC
     await mpc.start()
 
     # Récupération de l'image du runner local
-    img_path = '/home/matthieu/srs/crypto/14-secure-biometric-auth-SMC/data/Aaron_Peirsol/Aaron_Peirsol_0003.jpg' # input("Path of the image: ")
+    # img_path = '/home/matthieu/srs/crypto/14-secure-biometric-auth-SMC/data/Aaron_Peirsol/Aaron_Peirsol_0003.jpg' # input("Path of the image: ")
     # Extraction des vecteurs propres de l'image
     image = face_recognition.load_image_file(img_path)
     embedding = face_recognition.face_encodings(image)[0]
@@ -43,6 +44,11 @@ async def main():
     await mpc.shutdown()
 
 
-mpc.run(main())
-
-# /home/juloow/Documents/14-secure-biometric-auth-SMC/data/Aaron_Eckhart/Aaron_Eckhart_0001.jpg
+if __name__ == "__main__":
+    """
+    Parse arguments
+    """
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--image", type=str, required=True, help="path to the image to be load")
+    args = parser.parse_args()
+    mpc.run(main(args.image))
