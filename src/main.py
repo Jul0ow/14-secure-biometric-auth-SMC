@@ -1,18 +1,34 @@
+#!/usr/bin/python3
+
 from deepface import DeepFace
+from mpyc.runtime import mpc
+from mpyc.numpy import np
 
-aaron_peirsol = [
-    "data/Aaron_Peirsol/Aaron_Peirsol_0001.jpg",
-    "data/Aaron_Peirsol/Aaron_Peirsol_0002.jpg",
-    "data/Aaron_Peirsol/Aaron_Peirsol_0003.jpg",
-    "data/Aaron_Peirsol/Aaron_Peirsol_0004.jpg",
-    ]
+secflt = mpc.SecFlt()
 
-aaron_sorkin = [
-    "data/Aaron_Sorkin/Aaron_Sorkin_0001.jpg",
-    "data/Aaron_Sorkin/Aaron_Sorkin_0002.jpg",
-    "data/Aaron_Sorkin/Aaron_Sorkin_0003.jpg",
-    "data/Aaron_Sorkin/Aaron_Sorkin_0004.jpg",
-    ]
+async def main():
+    # Initialiser le runtime MPyC
+    await mpc.start()
 
-print('Is Sorking Sorking ?', DeepFace.verify(img1_path=aaron_peirsol[0], img2_path=aaron_peirsol[1])['verified'])
-print('Is Sorking Peirsol ?', DeepFace.verify(img1_path=aaron_sorkin[0], img2_path=aaron_peirsol[1])['verified'])
+    # Récupération de l'image du runner local
+    img_path = '/home/juloow/Documents/14-secure-biometric-auth-SMC/data/Aaron_Eckhart/Aaron_Eckhart_0001.jpg' # input("Path of the image: ")
+    # Extraction des vecteurs propres de l'image
+    embedding = DeepFace.represent(img_path=img_path)[0]['embedding']
+    embedding = [secflt(x) for x in embedding]
+
+    # Récupération de l'image de la seconde partie
+    user, server = mpc.input(embedding)
+
+    user = np.array(user)
+    server = np.array(server)
+
+    distance = user - server
+
+    mpc.output(distance)
+
+    await mpc.shutdown()
+
+
+mpc.run(main())
+
+# /home/juloow/Documents/14-secure-biometric-auth-SMC/data/Aaron_Eckhart/Aaron_Eckhart_0001.jpg
