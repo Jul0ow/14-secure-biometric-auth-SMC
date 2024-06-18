@@ -22,13 +22,23 @@ async def main():
     # Récupération de l'image de la seconde partie
     user, server = mpc.input(embedding)
 
-    # user = np.array(user)
-    # server = np.array(server)
+    print('Converting arrays to numpy')
+    user = np.array(user)
+    server = np.array(server)
 
+    print('Computing the distance')
     distance = user - server
-    # distance = [user[i] - server[i] for i in range(len(user))]
+    print('Computing the euclidian distance')
+    print('Multiply')
+    euclidian = np.multiply(distance, distance)
+    print('Sum')
+    euclidian = np.sum(euclidian)
 
-    await mpc.output(distance)
+    print('Printing the result')
+    euclidian = await mpc.output(euclidian)
+    print('Sqrt')
+    euclidian = np.sqrt(euclidian)
+    print('Result', euclidian)
 
     await mpc.shutdown()
 
