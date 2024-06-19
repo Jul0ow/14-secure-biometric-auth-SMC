@@ -42,8 +42,14 @@ async def main(img_path):
     print('Result', euclidian)
 
     await mpc.shutdown()
+    return euclidian
 
 
+def process(image):
+    return mpc.run(main(image))
+
+
+# python3.10 main.py --image "/home/matthieu/srs/crypto/14-secure-biometric-auth-SMC/data/Aaron_Peirsol/Aaron_Peirsol_0001.jpg" -M2 -I1
 if __name__ == "__main__":
     """
     Parse arguments
@@ -51,4 +57,5 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--image", type=str, required=True, help="path to the image to be load")
     args = parser.parse_args()
-    mpc.run(main(args.image))
+
+    process(args.image)
