@@ -7,11 +7,8 @@ import argparse
 
 secflt = mpc.SecFlt()
 secfpx = mpc.SecFxp(32)
-async def main(img_path):
-    # Initialiser le runtime MPyC
 
-    await mpc.start()
-
+async def compute(img_path):
     # Récupération de l'image du runner local
     # img_path = '/home/matthieu/srs/crypto/14-secure-biometric-auth-SMC/data/Aaron_Peirsol/Aaron_Peirsol_0003.jpg' # input("Path of the image: ")
     # Extraction des vecteurs propres de l'image
@@ -34,8 +31,15 @@ async def main(img_path):
     print('Printing the result')
     euclidian = await mpc.output(euclidian)
     # print('Sqrt')
-    # euclidian = np.sqrt(euclidian)
+    euclidian = np.sqrt(euclidian)
     print('Result', euclidian)
+    return euclidian
+
+async def main(img_path):
+    # Initialiser le runtime MPyC
+    await mpc.start()
+
+    euclidian = await compute(img_path)
 
     await mpc.shutdown()
     return euclidian
