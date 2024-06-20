@@ -6,7 +6,7 @@ import face_recognition
 import argparse
 
 secflt = mpc.SecFlt()
-
+secfpx = mpc.SecFxp(32)
 async def main(img_path):
     # Initialiser le runtime MPyC
 
@@ -18,17 +18,13 @@ async def main(img_path):
     image = face_recognition.load_image_file(img_path)
     embedding = face_recognition.face_encodings(image)[0]
     # embedding = DeepFace.represent(img_path=img_path)[0]['embedding']
-    embedding = [secflt(x) for x in embedding]
+    embedding =  secfpx.array(embedding)
 
     # Récupération de l'image de la seconde partie
     user, server = mpc.input(embedding)
 
-    print('Converting arrays to numpy')
-    user = np.array(user)
-    server = np.array(server)
-
     print('Computing the distance')
-    distance = user - server
+    distance = np.subtract(user, server)
     print('Computing the euclidian distance')
     print('Multiply')
     euclidian = np.multiply(distance, distance)
@@ -37,8 +33,8 @@ async def main(img_path):
 
     print('Printing the result')
     euclidian = await mpc.output(euclidian)
-    print('Sqrt')
-    euclidian = np.sqrt(euclidian)
+    # print('Sqrt')
+    # euclidian = np.sqrt(euclidian)
     print('Result', euclidian)
 
     await mpc.shutdown()

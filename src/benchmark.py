@@ -46,32 +46,34 @@ def test_images(image1, image2, threshold):
     :return: True if images represent the same person. False otherwise.
     """
 
-    subprocess.Popen(['python3.10', 'main.py', '-M2', '-I0', '--image', image1], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    subprocess.Popen(['python3.10', 'main.py', '-M2', '-I0', '--image', image1], stderr=subprocess.PIPE)
     result = process(image2)
 
     return result <= threshold
 
 
-
-def main(data_dir):
+def process_benchmark(data_dir):
     res = list_all_files(data_dir, '.jpg')
-    # for s in res:
-        # print(s)
 
-    expected = is_same_person(res[0], res[1])
-    result = test_images(res[0], res[1], 0.4)
+    threshold = 0.4
 
-    if expected != result:
-        print("Failed")
-    else:
-        print("Passed")
+    for image1 in res:
+        for image2 in res:
+            print("Testing image {} with image {}".format(image1, image2))
+            expected = is_same_person(image1, image2)
+            result = test_images(image1, image2, threshold)
+            if expected != result:
+                print("Failed")
+            else:
+                print("Passed")
 
-# python3.10 benchmark.py --data /home/matthieu/srs/crypto/14-secure-biometric-auth-SMC/data/ -I0
+
+# python3.10 benchmark.py --data /home/matthieu/srs/crypto/14-secure-biometric-auth-SMC/data/ -M2 -I1
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--data", type=str, required=True, help="path to the data folder")
     args = parser.parse_args()
 
-    main(args.data)
+    process_benchmark(args.data)
 
