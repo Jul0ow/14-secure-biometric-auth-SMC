@@ -1,6 +1,5 @@
 #!/usr/bin/python3
 
-from deepface import DeepFace
 from mpyc.runtime import mpc
 from mpyc.numpy import np
 import face_recognition
@@ -10,6 +9,7 @@ secflt = mpc.SecFlt()
 
 async def main(img_path):
     # Initialiser le runtime MPyC
+
     await mpc.start()
 
     # Récupération de l'image du runner local
