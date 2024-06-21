@@ -3,6 +3,14 @@ import argparse
 import os
 import pickle
 
+"""
+    This script serializes face recognition models into a pickle file. The script use **face_recognition** library to 
+    extract face encodings from an image.
+    The serialized format is [[face_encodings, image_path],...]
+    ex usage:
+    python3 serializing.py  --data /dir_to_data/ --dest serialized.pkl
+"""
+
 def list_all_files(directory, extension):
     """
     List all files with the given extension in a directory.
@@ -34,8 +42,6 @@ def convert_to_face_encodings(imgs):
             face_encodings.append([face_recognition.face_encodings(image)[0], img])
         except:
             print("Couldn't find face encodings for {}".format(img))
-        if nb_proceed == 100:
-            break
 
     return face_encodings
 
@@ -59,5 +65,7 @@ if __name__ == "__main__":
     print("Found " + str(len(imgs)) + " images to serialise")
 
     data = convert_to_face_encodings(imgs)
+
+    print(f"Converted {len(data)} images to face encodings, {(len(data) * 100)/len(imgs):.2f}% converting rate")
 
     serialisation(data, args.dest)

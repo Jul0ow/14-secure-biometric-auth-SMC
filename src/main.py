@@ -5,6 +5,17 @@ from mpyc.numpy import np
 import face_recognition
 import argparse
 
+"""
+This script is where the MPC computation is done using the **MPyC** library. One instance of the script represent one
+MPC party
+ex usage:
+ # Fist party
+ python3.10 main.py --image "/dir/data/Aaron_Peirsol/Aaron_Peirsol_0001.jpg" -M2 -I0
+ # Second party
+ python3.10 main.py --image "/dir/data/Aaron_Peirsol/Aaron_Peirsol_0001.jpg" -M2 -I1
+"""
+
+
 secflt = mpc.SecFlt()
 secfpx = mpc.SecFxp(32)
 

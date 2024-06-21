@@ -9,6 +9,15 @@ import platform
 from mpyc.runtime import mpc
 from main import compute, compute_from_face_encoding
 
+"""
+    This script will try all the combinaison of images in `--data` and test if the MPC algorithm succeed to determine if
+    if it is the same face.
+    To do this the script will automatically lunch another instance of himself with the `iterator` option that served as
+    the other party. Indeed our algorithm is based on MPC computation made by two parties.
+    ex usage:
+        python3.10 benchmark.py --data serialized.pkl -M2 -I1
+"""
+
 
 class Colors:
     RESET = "\033[0m"
@@ -155,7 +164,7 @@ async def process_benchmark_reference(face_encodings):
 # python3.10 benchmark.py --data /home/matthieu/srs/crypto/14-secure-biometric-auth-SMC/data/ -M2 -I1
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data", type=str, required=True, help="path to the data folder")
+    parser.add_argument("--data", type=str, required=True, help="path to the file containing the face encodings")
     parser.add_argument("--iterator", action="store_true",
                         help="set if the program is an iterator that will provide all images")
     args = parser.parse_args()
@@ -165,7 +174,7 @@ if __name__ == '__main__':
     [[encoding_image_1, path_image1], [encoding_image2, path_image2], ...]
     """
 
-    with open('serialized.pkl', 'rb') as file:
+    with open(args.data, 'rb') as file:
         loaded_data_face_recognition = pickle.load(file)
     print(f"Load data face recognition, {len(loaded_data_face_recognition)} images loaded")
 
