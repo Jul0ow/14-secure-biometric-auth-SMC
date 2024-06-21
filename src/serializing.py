@@ -43,6 +43,7 @@ def serialisation(data, dest):
         pickle.dump(data, file)
 
 # python3 serializing.py  --data /home/matthieu/srs/crypto/14-secure-biometric-auth-SMC/data/ --dest serialized.pkl
+# it will take 25 minutes with the provided dataset of 13 233 images
 if __name__ == "__main__":
     """
     Parse arguments
@@ -55,6 +56,6 @@ if __name__ == "__main__":
     imgs = list_all_files(args.data, ".jpg")
     print("Found " + str(len(imgs)) + " images to serialise")
 
-    data = convet_to_face_encodings(imgs)
+    data = convert_to_face_encodings(imgs)
 
     serialisation(data, args.dest)
