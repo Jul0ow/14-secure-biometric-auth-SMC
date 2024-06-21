@@ -31,9 +31,11 @@ def convert_to_face_encodings(imgs):
         image = face_recognition.load_image_file(img)
         try:
             print(f"Encoding face {nb_proceed}/{total}")
-            face_encodings.append(face_recognition.face_encodings(image)[0])
+            face_encodings.append([face_recognition.face_encodings(image)[0], img])
         except:
             print("Couldn't find face encodings for {}".format(img))
+        if nb_proceed == 100:
+            break
 
     return face_encodings
 
