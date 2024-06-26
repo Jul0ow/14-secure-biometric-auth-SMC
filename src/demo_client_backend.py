@@ -7,6 +7,11 @@ from demo_server_backend import get_dataset_length
 from main import compute_from_face_encoding
 
 """
+    This script is the backend of the demonstrator client.
+    it makes no sense to be launch manually.
+    
+    If you want to start the demonstrator client run the following command:
+        python3 demo_client.py --data /path/to/img.jpg
 """
 
 
@@ -66,6 +71,7 @@ async def test_img(img_path, threshold):
         print(Colors.RED + "Cannot found face in image, recognition FAILED!" + Colors.RESET)
         return -1
 
+    # Need to do an MPC for at worst each image in the database
     for i in range(nb_test):
         result = await compute_from_face_encoding(embedding)
 
@@ -85,5 +91,5 @@ if __name__ == '__main__':
     parser.add_argument("--data", type=str, required=True, help="path to the image to be tested")
     args = parser.parse_args()
 
-    defaulf_threshold = 0.4
-    mpc.run(test_img(args.data, defaulf_threshold))
+    default_threshold = 0.4
+    mpc.run(test_img(args.data, default_threshold))

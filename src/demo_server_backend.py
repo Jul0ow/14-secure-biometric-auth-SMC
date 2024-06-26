@@ -6,6 +6,13 @@ from mpyc.runtime import mpc
 from main import compute_from_face_encoding
 
 """
+    This script is the backend of the demonstrator server.
+    it makes no sense to be launch manually.
+    It will iterate over the given database to test if the image that will be given by demo_client_backend
+    contains a face present in the database.
+    
+    If you want to start the demonstrator server run the following command:
+        python3 demo_server.py --data /path/to/dataset.pkl
 """
 
 
