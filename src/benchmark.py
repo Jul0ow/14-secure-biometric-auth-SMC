@@ -161,7 +161,7 @@ async def process_benchmark_reference(face_encodings):
     await mpc.shutdown()
 
 
-# python3.10 benchmark.py --data /home/matthieu/srs/crypto/14-secure-biometric-auth-SMC/data/ -M2 -I1
+# python3.10 benchmark.py --data serialized.pkl -M2 -I1
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--data", type=str, required=True, help="path to the file containing the face encodings")
