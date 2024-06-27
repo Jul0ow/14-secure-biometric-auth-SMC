@@ -2,6 +2,7 @@ import face_recognition
 import argparse
 import os
 import pickle
+import random
 
 """
     This script serializes face recognition models into a pickle file. The script use **face_recognition** library to 
@@ -11,7 +12,7 @@ import pickle
     python3 serializing.py  --data /dir_to_data/ --dest serialized.pkl
 """
 
-def list_all_files(directory, extension):
+def list_all_files(directory, extension, shuffle):
     """
     List all files with the given extension in a directory.
 
@@ -25,14 +26,17 @@ def list_all_files(directory, extension):
             # check that it is a file with the correct extension
             if len(file) >= 3 and file[-len(extension)::] == extension:
                 res.append(os.path.join(root, file))
-    res.sort()
+    if shuffle:
+        random.shuffle(res)
+    else:
+        res.sort()
     return res
 
 
-def convert_to_face_encodings(imgs):
+def convert_to_face_encodings(imgs, limit):
     face_encodings = []
     print("Encoding faces...")
-    total = len(imgs)
+    total = limit
     nb_proceed = 0
     for img in imgs:
         nb_proceed += 1
@@ -42,6 +46,8 @@ def convert_to_face_encodings(imgs):
             face_encodings.append([face_recognition.face_encodings(image)[0], img])
         except:
             print("Couldn't find face encodings for {}".format(img))
+        if nb_proceed >= limit:
+            break
 
     return face_encodings
 
@@ -59,12 +65,17 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--data", type=str, required=True, help="path to the data folder")
     parser.add_argument("--dest", type=str, required=True, help="path to the output file")
+    parser.add_argument("--limit", type=int, required=False, help="set the maximum number of images to serialize")
     args = parser.parse_args()
 
-    imgs = list_all_files(args.data, ".jpg")
+    imgs = list_all_files(args.data, ".jpg", True)
     print("Found " + str(len(imgs)) + " images to serialise")
 
-    data = convert_to_face_encodings(imgs)
+    if args.limit is None:
+        limit = len(imgs)
+    else:
+        limit = args.limit
+    data = convert_to_face_encodings(imgs, limit)
 
     print(f"Converted {len(data)} images to face encodings, {(len(data) * 100)/len(imgs):.2f}% converting rate")
 

@@ -67,7 +67,7 @@ def print_stat_bar(passed, total, passed_color, total_color):
 
 def printing_stat(nb_completed, total):
     # print pourcentage of completion
-    print("Pourcentage of completion: {}/{}".format(nb_completed, total))
+    print("Percentage of completion: {}/{}".format(nb_completed, total))
     print_stat_bar(nb_completed, total, Colors.RESET, Colors.RED)
 
 

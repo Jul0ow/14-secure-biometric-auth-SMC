@@ -74,10 +74,10 @@ def print_stat_bar(passed, total, passed_color, total_color):
 
 def printing_stat(success, fail, total):
     # print pourcentage of success
-    print("Pourcentage of success: {}/{}".format(success, success + fail))
+    print("Percentage of success: {}/{}".format(success, success + fail))
     print_stat_bar(success, success + fail, Colors.GREEN, Colors.RED)
     # print pourcentage of completion
-    print("Pourcentage of completion: {}/{}".format(success + fail, total))
+    print("Percentage of completion: {}/{}".format(success + fail, total))
     print_stat_bar(success + fail, total, Colors.RESET, Colors.RED)
 
 

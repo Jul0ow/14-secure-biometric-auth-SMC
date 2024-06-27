@@ -45,7 +45,7 @@ def print_stat_bar(passed, total, passed_color, total_color):
 
 def printing_stat(completed, total):
     # print pourcentage of completion
-    print("Pourcentage of completion: {}/{}".format(completed, total))
+    print("Percentage of completion: {}/{}".format(completed, total))
     print_stat_bar(completed, total, Colors.RESET, Colors.RED)
 
 
@@ -62,7 +62,7 @@ async def test_img(img_path, threshold):
     # This is the parent process
     await mpc.start()
 
-    nb_test = get_dataset_length("serialized.pkl")
+    nb_test = get_dataset_length("serialized_150.pkl")
     image = face_recognition.load_image_file(img_path)
 
     try:
