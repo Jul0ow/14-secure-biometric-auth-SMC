@@ -69,7 +69,7 @@ if __name__ == "__main__":
     parser.add_argument("--limit", type=int, required=False, help="set the maximum number of images to serialize")
     args = parser.parse_args()
 
-    imgs = list_all_files(args.data, ".jpg", True)
+    imgs = list_all_files(args.data, ".jpg", False)
     print("Found " + str(len(imgs)) + " images to serialise")
 
     if args.limit is None:

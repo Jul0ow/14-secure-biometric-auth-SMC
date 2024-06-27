@@ -147,17 +147,15 @@ async def process_benchmark_reference(face_encodings):
             expected = is_same_person(reference[1], tested[1])
             result = await compute_from_face_encoding(reference[0])
 
-            if result == -1:
-                # print("Face not found")
-                nb_fail += 1
-            elif expected and result <= threshold:
+            if expected != (result <= threshold):
                 print("Failed, expected {} but got {}".format(expected, result))
                 nb_fail += 1
             else:
-                # print("Passed")
+                print("Passed, got {}".format(result))
                 nb_success += 1
             printing_stat(nb_success, nb_fail, total)
 
+    print("Threshold used is {}".format(threshold))
     await mpc.shutdown()
 
 
@@ -167,6 +165,9 @@ if __name__ == '__main__':
     parser.add_argument("--data", type=str, required=True, help="path to the file containing the face encodings")
     parser.add_argument("--iterator", action="store_true",
                         help="set if the program is an iterator that will provide all images")
+    parser.add_argument("--threshold_value", type=float, required=False,
+                        help="threshold used to determine if face are the same, "
+                             "the default value is 0.4")
     args = parser.parse_args()
 
     """
@@ -179,6 +180,8 @@ if __name__ == '__main__':
     print(f"Load data face recognition, {len(loaded_data_face_recognition)} images loaded")
 
     threshold = 0.4
+    if args.threshold_value is not None:
+        threshold = args.threshold_value
 
     if args.iterator:
         mpc.run(process_benchmark_iterator(loaded_data_face_recognition))
