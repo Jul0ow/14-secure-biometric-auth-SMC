@@ -8,8 +8,9 @@ import random
     This script serializes face recognition models into a pickle file. The script use **face_recognition** library to 
     extract face encodings from an image.
     The serialized format is [[face_encodings, image_path],...]
+    The limit parameter limits the maximum number of face encodings to be serialized.
     ex usage:
-    python3 serializing.py  --data /dir_to_data/ --dest serialized.pkl
+    python3 serializing.py  --data /dir/to/data/ --dest serialized_150.pkl --limit 150
 """
 
 def list_all_files(directory, extension, shuffle):
@@ -74,9 +75,12 @@ if __name__ == "__main__":
     if args.limit is None:
         limit = len(imgs)
     else:
-        limit = args.limit
+        if args.limit < len(imgs):
+            limit = args.limit
+        else:
+            limit = len(imgs)
     data = convert_to_face_encodings(imgs, limit)
 
-    print(f"Converted {len(data)} images to face encodings, {(len(data) * 100)/len(imgs):.2f}% converting rate")
+    print(f"Converted {len(data)} images to face encodings, {(len(data) * 100)/limit:.2f}% converting rate")
 
     serialisation(data, args.dest)
