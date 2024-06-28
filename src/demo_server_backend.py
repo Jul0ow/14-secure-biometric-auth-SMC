@@ -115,6 +115,6 @@ if __name__ == '__main__':
         loaded_data_face_recognition = pickle.load(file)
     print(f"Load data face recognition, {len(loaded_data_face_recognition)} images loaded")
 
-    default_threshold = 0.4
+    default_threshold = 0.575
 
     mpc.run(process_server(loaded_data_face_recognition, default_threshold))

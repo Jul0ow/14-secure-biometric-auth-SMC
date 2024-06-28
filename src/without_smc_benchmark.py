@@ -1,20 +1,16 @@
 import argparse
-import os
 import pickle
-import subprocess
+import time
+import numpy as np
+from face_recognition import face_distance
 from pathlib import Path
-import platform
-
-from mpyc.runtime import mpc
-from main import compute, compute_from_face_encoding
 
 """
-    This script will try all the combinaison of images in `--data` and test if the MPC algorithm succeed to determine if
-    if it is the same face.
-    To do this the script will automatically lunch another instance of himself with the `iterator` option that served as
-    the other party. Indeed our algorithm is based on MPC computation made by two parties.
+    The purpose of this script is to test the authentification of face without SMC.
+    This script will try all the combinaison of images in `--data` and will try determine if it is the same face using
+    euclidean distance.
     ex usage:
-        python3.10 benchmark.py --data serialized.pkl -M2 -I1
+        python3.10 without_smc_benchmark.py --data serialized.pkl
 """
 
 
@@ -36,31 +32,6 @@ class Colors:
     BG_CYAN = "\033[46m"
     BG_WHITE = "\033[47m"
 
-
-def list_all_files(directory, extension):
-    """
-    List all files with the given extension in a directory.
-
-    :param directory: directory to list
-    :param extension: file extension
-    """
-    res = []
-    for root, dirs, files in os.walk(directory):
-        files.sort()
-        for file in files:
-            # check that it is a file with the correct extension
-            if len(file) >= 3 and file[-len(extension)::] == extension:
-                res.append(os.path.join(root, file))
-    res.sort()
-    return res
-
-
-def clear_terminal():
-    current_os = platform.system()
-    if current_os == "Windows":
-        os.system('cls')
-    else:
-        os.system('clear')
 
 
 def print_stat_bar(passed, total, passed_color, total_color):
@@ -93,45 +64,24 @@ def is_same_person(file1, file2):
     dossier2 = Path(file2).resolve().parent
     return dossier1 == dossier2
 
+def euclidean_distance(person1, person2):
+    distance = np.subtract(person1, person2)
+    # print('Multiply')
+    euclidian = np.multiply(distance, distance)
+    # print('Sum')
+    euclidian = np.sum(euclidian)
+    # print('Sqrt')
+    euclidian = np.sqrt(euclidian)
+    # print('Result', euclidian)
+    return euclidian
 
-async def test_images(image1, image2, threshold):
-    """
-
-    Test whether two images represent the same person using MPyC.
-
-    :param image1: the path of the first image
-    :param image2: the path of the second image
-    :return: True if images represent the same person. False otherwise.
-    """
-
-    subprocess.Popen(['python3.10', 'main.py', '-M2', '-I0', '--image', image1], stderr=subprocess.PIPE)
-    result = await compute(image2)
-
-    return result <= threshold
-
-
-async def process_benchmark_iterator(face_encodings):
-    """
-    :param face_encodings: the list of face encodings with the format:
-    [[encoding_image_1, path_image1], [encoding_image2, path_image2], ...]
-    """
-    await mpc.start()
-
-    for _ in range(len(face_encodings)):
-        for tested in face_encodings:
-            await compute_from_face_encoding(tested[0])
-
-    await mpc.shutdown()
-
-
-async def process_benchmark_reference(face_encodings):
+def process_benchmark_reference(face_encodings):
     """
     :param face_encodings: the list of face encodings with the format:
     [[encoding_image_1, path_image1], [encoding_image2, path_image2], ...]
     """
 
     # This is the parent process
-    await mpc.start()
 
     nb_success = 0
     nb_fail = 0
@@ -144,7 +94,7 @@ async def process_benchmark_reference(face_encodings):
             # clear_terminal()
             print("Testing image {} with image {}".format(reference[1], tested[1]))
             expected = is_same_person(reference[1], tested[1])
-            result = await compute_from_face_encoding(reference[0])
+            result = euclidean_distance(tested[0], reference[0])
 
             if expected != (result <= threshold):
                 print("Failed, expected {} but got {}".format(expected, result))
@@ -155,21 +105,12 @@ async def process_benchmark_reference(face_encodings):
             printing_stat(nb_success, nb_fail, total)
 
     print("Threshold used is {}".format(threshold))
-    await mpc.shutdown()
 
 
-# python3.10 benchmark.py --data serialized.pkl -M2 -I1
+# python3.10 without_smc_benchmark.py --data serialized.pkl
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='This script will try all the combinaison of images in `--data` and test if the MPC algorithm succeed to determine if\
-    if it is the same face.\n\
-    To do this the script will automatically lunch another instance of himself with the `iterator` option that served as\
-    the other party. Indeed our algorithm is based on MPC computation made by two parties.\
-    You must add -M2 and -I1 as the last parameter!\n\
-    ex usage:\n\
-    python3.10 benchmark.py --data path/to/serialized.pkl -M2 -I1')
+    parser = argparse.ArgumentParser()
     parser.add_argument("--data", type=str, required=True, help="path to the file containing the face encodings")
-    parser.add_argument("--iterator", action="store_true",
-                        help="set if the program is an iterator that will provide all images")
     parser.add_argument("--threshold_value", type=float, required=False,
                         help="threshold used to determine if face are the same, "
                              "the default value is 0.4")
@@ -180,6 +121,8 @@ if __name__ == '__main__':
     [[encoding_image_1, path_image1], [encoding_image2, path_image2], ...]
     """
 
+    start_time = time.time()
+
     with open(args.data, 'rb') as file:
         loaded_data_face_recognition = pickle.load(file)
     print(f"Load data face recognition, {len(loaded_data_face_recognition)} images loaded")
@@ -188,9 +131,6 @@ if __name__ == '__main__':
     if args.threshold_value is not None:
         threshold = args.threshold_value
 
-    if args.iterator:
-        mpc.run(process_benchmark_iterator(loaded_data_face_recognition))
-    else:
-        subprocess.Popen(['python3.10', 'benchmark.py', '--iterator', '--data', args.data, '-M2', '-I0'],
-                         stderr=subprocess.PIPE)
-        mpc.run(process_benchmark_reference(loaded_data_face_recognition))
+    process_benchmark_reference(loaded_data_face_recognition)
+
+    print(f"Process benchmark reference took {time.time() - start_time} seconds")

@@ -91,5 +91,5 @@ if __name__ == '__main__':
     parser.add_argument("--data", type=str, required=True, help="path to the image to be tested")
     args = parser.parse_args()
 
-    default_threshold = 0.4
+    default_threshold = 0.575
     mpc.run(test_img(args.data, default_threshold))
