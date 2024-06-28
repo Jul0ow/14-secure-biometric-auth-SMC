@@ -22,6 +22,10 @@ of each script.**
 
 **Launch those script directly in `src` folder**
 
+### Requierements
+
+All the requirements for the script can be found `src/requirements.txt` and install using `pip install -r requirements.txt`
+
 ### Notes
 The client and the server of the demonstrator need to exchange the number of computation to process. This value correspond
 to the size of the dataset. If the server is launch on another dataset that `data/serialized_150_prod.py` you will need to

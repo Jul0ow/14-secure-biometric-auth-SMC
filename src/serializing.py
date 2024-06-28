@@ -51,6 +51,8 @@ def convert_to_prod_face_encodings(imgs, limit):
             break
 
     return face_encodings
+
+
 def convert_to_face_encodings(imgs, limit):
     face_encodings = []
     print("Encoding faces...")
@@ -68,6 +70,7 @@ def convert_to_face_encodings(imgs, limit):
             break
 
     return face_encodings
+
 
 def serialisation(data, dest):
     with open(dest, 'wb') as file:
