@@ -2,7 +2,6 @@ import argparse
 import os
 import pickle
 import subprocess
-import time
 from pathlib import Path
 import platform
 
@@ -161,7 +160,13 @@ async def process_benchmark_reference(face_encodings):
 
 # python3.10 benchmark.py --data serialized.pkl -M2 -I1
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description='This script will try all the combinaison of images in `--data` and test if the MPC algorithm succeed to determine if\
+    if it is the same face.\n\
+    To do this the script will automatically lunch another instance of himself with the `iterator` option that served as\
+    the other party. Indeed our algorithm is based on MPC computation made by two parties.\
+    You must add -M2 and -I1 as the last parameter!\n\
+    ex usage:\n\
+    python3.10 benchmark.py --data path/to/serialized.pkl -M2 -I1')
     parser.add_argument("--data", type=str, required=True, help="path to the file containing the face encodings")
     parser.add_argument("--iterator", action="store_true",
                         help="set if the program is an iterator that will provide all images")

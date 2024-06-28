@@ -62,7 +62,7 @@ async def test_img(img_path, threshold):
     # This is the parent process
     await mpc.start()
 
-    nb_test = get_dataset_length("serialized_150.pkl")
+    nb_test = get_dataset_length("../data/serialized_150.pkl")
     image = face_recognition.load_image_file(img_path)
 
     try:
