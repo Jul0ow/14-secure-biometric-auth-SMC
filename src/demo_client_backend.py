@@ -60,9 +60,10 @@ async def test_img(img_path, threshold):
     """
 
     # This is the parent process
+    is_recognized = False
     await mpc.start()
 
-    nb_test = get_dataset_length("../data/serialized_150.pkl")
+    nb_test = get_dataset_length("../data/serialized_150_prod.pkl")
     image = face_recognition.load_image_file(img_path)
 
     try:
@@ -76,13 +77,14 @@ async def test_img(img_path, threshold):
         result = await compute_from_face_encoding(embedding)
 
         if result <= threshold:
-            print(Colors.GREEN + "Face recognized, Verification successful!" + Colors.RESET)
-            await mpc.shutdown()
-            return
-        printing_stat(i, nb_test)
+            is_recognized = True
+        printing_stat(i + 1, nb_test)
 
     await mpc.shutdown()
-    print(Colors.RED + "Face not recognized." + Colors.RESET)
+    if is_recognized:
+        print(Colors.GREEN + "Face recognized, Verification successful!" + Colors.RESET)
+    else:
+        print(Colors.RED + "Face not recognized." + Colors.RESET)
 
 
 # python3.10 demo_client.py --data /home/matthieu/srs/crypto/14-secure-biometric-auth-SMC/data/Najib_al-Salhi/Najib_al-Salhi_0001.jpg -M2 -I0

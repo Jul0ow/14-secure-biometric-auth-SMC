@@ -34,6 +34,23 @@ def list_all_files(directory, extension, shuffle):
     return res
 
 
+def convert_to_prod_face_encodings(imgs, limit):
+    face_encodings = []
+    print("Encoding faces...")
+    total = limit
+    nb_proceed = 0
+    for img in imgs:
+        nb_proceed += 1
+        image = face_recognition.load_image_file(img)
+        try:
+            print(f"Production encoding face {nb_proceed}/{total}")
+            face_encodings.append([face_recognition.face_encodings(image)[0]])
+        except:
+            print("Couldn't find face encodings for {}".format(img))
+        if nb_proceed >= limit:
+            break
+
+    return face_encodings
 def convert_to_face_encodings(imgs, limit):
     face_encodings = []
     print("Encoding faces...")
@@ -67,9 +84,15 @@ if __name__ == "__main__":
     parser.add_argument("--data", type=str, required=True, help="path to the data folder")
     parser.add_argument("--dest", type=str, required=True, help="path to the output file")
     parser.add_argument("--limit", type=int, required=False, help="set the maximum number of images to serialize")
+    parser.add_argument("--prod", action="store_true", help="set the dataset to the prod format, production format does not link face encodings to people's names")
+    parser.add_argument("--no-shuffle", action="store_true", help="If present the script will take all the image in --data in alphabetical order (default is random)")
     args = parser.parse_args()
 
-    imgs = list_all_files(args.data, ".jpg", False)
+    shuffle = True
+    if args.no_shuffle:
+        shuffle = False
+
+    imgs = list_all_files(args.data, ".jpg", shuffle)
     print("Found " + str(len(imgs)) + " images to serialise")
 
     if args.limit is None:
@@ -79,7 +102,10 @@ if __name__ == "__main__":
             limit = args.limit
         else:
             limit = len(imgs)
-    data = convert_to_face_encodings(imgs, limit)
+    if args.prod:
+        data = convert_to_prod_face_encodings(imgs, limit)
+    else:
+        data = convert_to_face_encodings(imgs, limit)
 
     print(f"Converted {len(data)} images to face encodings, {(len(data) * 100)/limit:.2f}% converting rate")
 

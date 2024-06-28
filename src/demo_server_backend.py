@@ -89,12 +89,7 @@ async def process_server(face_encodings, threshold):
     for tested in face_encodings:
         nb_processed += 1
         # clear_terminal()
-        print("Testing image client image with image {}".format(tested[1]))
-        result = await compute_from_face_encoding(tested[0])
-
-        if result <= threshold:
-            print("Face recognized successfully")
-            break
+        await compute_from_face_encoding(tested[0])
 
         printing_stat(nb_processed, total)
     await mpc.shutdown()
