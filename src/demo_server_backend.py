@@ -78,7 +78,7 @@ async def process_server(face_encodings, threshold):
     the client is in the `face_encodings`.
 
     :param face_encodings: the list of face encodings with the format:
-    [[encoding_image_1, path_image1], [encoding_image2, path_image2], ...]
+    [[encoding_image_1], [encoding_image2], ...]
     :param threshold: the threshold for the face encoding
     """
 
@@ -98,12 +98,12 @@ async def process_server(face_encodings, threshold):
 # python3.10 demo_server_backend.py --data serialized.pkl -M2 -I1
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data", type=str, required=True, help="path to the file containing the face encodings")
+    parser.add_argument("--data", type=str, required=True, help="path to the pickle file containing the face encodings. Data must have been serializing with the with the format: [[encoding_image_1], [encoding_image2], ...]")
     args = parser.parse_args()
 
     """
     Data must have been serializing with the with the format:
-    [[encoding_image_1, path_image1], [encoding_image2, path_image2], ...]
+    [[encoding_image_1], [encoding_image2], ...]
     """
 
     with open(args.data, 'rb') as file:
