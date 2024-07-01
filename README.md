@@ -22,7 +22,7 @@ of each script.**
 
 **Launch those script directly in `src` folder**
 
-### Requierements
+### Requirements
 
 All the requirements for the script can be found `src/requirements.txt` and install using `pip install -r requirements.txt`
 
