@@ -1,0 +1,440 @@
+\documentclass[12pt,a4paper]{article}
+\renewcommand{\contentsname}{Sommaire}
+\usepackage[french]{babel}
+\usepackage{graphicx} % Required for inserting images
+\usepackage{fancyhdr} %customize the footer and header
+\usepackage{hyperref} %clickable tableofcontents
+\usepackage[style=ieee]{biblatex}
+\usepackage{csquotes}
+\usepackage{listings}
+\usepackage{xcolor}
+ \usepackage{float}
+\usepackage{enumitem}
+\usepackage{amsfonts}
+\usepackage[margin = 2.5cm]{geometry}
+\usepackage[T1]{fontenc} 
+\addbibresource{Bib.bib}
+\nocite{*}
+
+\setlength{\parskip}{\baselineskip}%
+
+\title{Secure biometric authentication using secure multiparty computation SMC}
+\author{Groupe 14 - Jules Diaz, Matthieu Colin, Alexandra Delin, Maëlys Rimbert}
+\date{Juillet 2024}
+
+
+\lhead{\textbf{EPITA - CRYPI}}
+\rhead{Juillet 2024}
+
+
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2
+}
+\lstset{style=mystyle}
+
+\begin{document}
+
+\maketitle
+\thispagestyle{empty}
+\begin{center}
+    \markboth{\textbf{CRYPI}\\EPITA}{Jules DIAZ, Matthieu COLIN, Maëlys RIMBERT, Alexandra DELIN\\Juillet 2024}
+\end{center}
+
+\cfoot{} % Désactiver la numérotation de page sur la page de sommaire
+\tableofcontents
+
+\newpage
+
+\setcounter{page}{1}
+\pagestyle{fancy}
+\fancyfoot[C]{\thepage} % réactive la numérotation après le sommaire
+\pagenumbering{arabic}
+
+\section{Introduction}
+Dans le contexte actuel où les données biométriques sont de plus en plus utilisées, la sécurisation de l'authentification biométrique revêt une importance cruciale. Ces données sont particulièrement sensibles car, contrairement aux mots de passe, elles ne peuvent pas être réinitialisées. Diverses méthodes cryptographiques peuvent être employées pour sécuriser l'authentification biométrique, telles que le \textbf{chiffrement totalement homomorphe} (\textit{FHE}), le \textbf{calcul multipartite sécurisé} (\textit{SMC}) ou des méthodes basées sur des \textbf{codes correcteurs d'erreurs}. Dans ce projet, nous proposons d'utiliser le calcul multipartite sécurisé (SMC) pour \textbf{garantir la sécurité de l'authentification faciale}.
+
+Ce projet vise à mettre en œuvre une authentification biométrique sécurisée en utilisant le SMC. Grâce à une bibliothèque SMC, nous serons en mesure de déterminer si deux images contenant un visage représentent la même personne, tout en maintenant la confidentialité des données. 
+
+Dans ce processus, il y a deux participants : un serveur ayant une base de données de visages autorisés et un client fournissant les données biométriques de son visage.
+Ces deux participants peuvent être \textit{semi-honnête}. Le cas échéant, ils vont \textbf{essayer de déduire des informations à propos des entrées en utilisant le calcul}. 
+
+L'un des principaux défis réside dans l'assurance de la \textbf{confidentialité de ces données} biométriques. Ce rapport détaillera les étapes de l'implémentation de cette authentification, les résultats obtenus, ainsi que les perspectives d'amélioration.
+
+Notre solution est écrite en langage \textit{Python}. Son objectif est de vérifier l'appartenance d'une personne à une base de données prédéfinie, par exemple pour vérifier son autorisation d'accès à un bâtiment d'entreprise.
+
+\newpage
+\section{Vue d'ensemble de SMC}
+%Familiarize Yourself with Secure Multi-Party Computation: Before you begin, it is essential to understand the basics of secure multi-party computation. Research and read about secure multi-party computation, its different types, and how it is used in secure facial authentication.
+
+\subsection{Introduction}
+
+Le calcul multipartite sécurisé est une branche de la cryptographie qui a pour but de \textbf{calculer la sortie d’une fonction} à plusieurs variables tout \textbf{en gardant les entrées privées}.
+
+Ce mode ne permet pas d’assurer la sécurité des communications sur un canal non sécurisé, mais il protège les participants et leurs données d’entrée afin qu'elles ne puissent être déduites par les autres participants \textbf{pendant le calcul}.
+Dans notre cas, lorsqu’un participant fournit une image de son visage, les autres participants au calcul ne doivent pas pouvoir en déduire des informations.
+
+Par exemple, imaginons que nous disposons de l’\textit{ADN} d’un patient et que nous souhaitons le comparer avec une base de données d’\textit{ADN} pour évaluer le risque de maladie. Cela permettrait de vérifier si le patient est prédisposé à cette maladie. Le calcul multipartite sécurisé permet d'obtenir des résultats \textbf{sans divulguer d’informations sur le contenu de la base de données} ; il permettrait également de prouver ce résultat et d’en confirmer l’intégrité.
+\subsection{Histoire}
+Le calcul multipartite sécurisé est introduit la première fois en tant que \textit{secure two-party computation} ou \textit{problème des millionnaires} en 1982.
+
+Le calcul est basé sur le fait de devoir partager des secrets pour effectuer un calcul commun alors qu’un acteur malveillant se trouve peut-être parmi les autres participants. Un acteur est malveillant lorsqu’il essaie d’induire les entrées d'une fonction en observant le calcul effectué.
+
+\subsection{Définition}
+\subsubsection{Général}
+On définit les participants \(p_1, p_2, …p_N\) qui ont chacun une donnée privée, qu’on nomme respectivement \(d_1, d_2, …d_N\). Les participants veulent calculer la valeur de retour d’une fonction publique \(F(d_1, d_2, …d_N)\) tout en gardant leur donnée secrète.
+
+On part du principe que \textbf{les seules données que possèdent les participants sont leur entrée et le résultat}.
+
+L’exemple parfait est le \textit{problème de millionnaires} cité plus tôt. Imaginons trois personnes Alice, Bob et Charles, qui ont chacun un salaire $x$, $y$, et $z$. Pour savoir qui est le plus riche parmi eux, on pourrait utiliser la fonction : $F(x, y, z) = max(x, y, z)$
+
+Les propriétés les plus basiques de ces protocoles sont :
+\begin{itemize}
+    \item \textit{Protection de l’entrée} : \textbf{aucune information sur les entrées privées ne peuvent être induites du calcul. Les seules informations qui peuvent être induites sont celles transmises par le résultat} ;
+    \item \textit{Validité du résultat} : un acteur malveillant ne doit \textbf{pas être capable d’influer sur le résultat} en faisant en sorte que l’algorithme produise un résultat erroné. Pour cela, on peut utiliser deux méthodes :
+    \begin{itemize}[label=$\star$]
+        \item Soit les participants honnêtes doivent avoir l’\textbf{assurance que le résultat est valide} car l’algorithme est robuste (dans la réalité, c’est compliqué, sachant que la sortie dépend de l’entrée) ;
+        \item Soit l’algorithme \textbf{s'arrête s’il détecte une erreur}
+    \end{itemize}
+    \item \textit{Indépendance des entrées} : les acteurs malveillants doivent \textbf{choisir leurs entrées indépendamment des participants honnêtes} ;
+    \item \textit{Garantie de la sortie} : les acteurs malveillants ne doivent \textbf{pas être en capacité d’empêcher les parties honnêtes de recevoir le résultat} ;
+    \item \textit{Justesse} : les acteurs malveillants ne peuvent recevoir une sortie que si les acteurs honnêtes le peuvent aussi
+\end{itemize}
+
+\subsubsection{Sécurité}
+Il existe deux paradigmes dans le calcul multipartite sécurisé : \textit{le monde idéal} et \textit{le monde réel}. Dans le monde idéal, il existe une \textbf{autorité incorruptible} au centre des communications, à laquelle tous les participants envoient leurs entrées.
+
+Dans le monde réel, \textbf{chacun peut envoyer des messages à tous le monde}.
+Un protocole est considéré comme sécurisé si un acteur ne peut pas plus apprendre dans le monde réel qu’il n'aurait pu en apprendre dans le monde idéal.
+
+Il existe des protocoles différents selon les situations, en particulier en fonction de la présomption de la présence d'une majorité de participants corrompus, ou non.
+
+Il y a deux grandes catégories d’acteurs malveillants :
+\begin{itemize}
+    \item Les acteurs semi-honnêtes (\textbf{passifs}) coopèrent et appliquent le protocole sans tenter de dévier. Les acteurs semi-honnêtes récoltent des informations seulement sur la sortie ;
+    \item Les acteurs malicieux (\textbf{actifs}) tentent de dévier du protocole et de tricher afin de récolter des informations ou de faire échouer le protocole
+\end{itemize}
+
+Un dernier type, appelé \textit{adversaire couvert}, désigne un adversaire dont les tentatives de compromettre l'algorithme peuvent être détectées avec une certaine probabilité dans l'application.
+
+\subsubsection{Principes}
+Il existe des principes de base :
+\begin{itemize}
+    \item \textbf{Le modèle doit être considéré comme idéal} : tous les participants doivent considérer que la sécurité du système est incorruptible ;
+    \item Les utilisateurs ne doivent pas connaître l'algorithme, ni même être conscients qu’un algorithme de type MPC est utilisé : la connaissance de l'algorithme ne doit pas constituer une condition pour la sécurité ;
+    \item Tout type d’entrée doit être autorisé. Si cela n’est pas possible, il faut faire en sorte qu’il y ait un filtre avant l’entrée ;
+    \item \textbf{MPC protège le calcul et non le résultat}. Cela ne veut pas dire que la sortie ne révèle pas d’informations sensibles. MPC assure donc qu’aucune information ne sera révélée par le calcul
+\end{itemize}
+
+
+
+
+\subsection{Faisabilité}
+La mise en œuvre d'un tel algorithme est réalisable et \textbf{déjà appliquée dans de nombreux domaines}.
+
+On note \( n \) le nombre de participants et \( t \) la limite supérieure du nombre d’acteurs malveillants :
+
+Pour \( t < \frac{n}{3} \) (donc au maximum un tiers des participants sont corrompus), les algorithmes de calcul multipartite sécurisé (MPC) qui \textbf{garantissent la justesse et la garantie de sortie peuvent être mis en place pour toute fonction dans un réseau synchrone, point à point, avec authentification des canaux}, à condition que ces derniers soient sécurisés.
+
+Pour \( t < \frac{n}{2} \) (donc une majorité de participants sont honnêtes), les algorithmes MPC qui \textbf{garantissent la justesse et la garantie de sortie peuvent être mis en œuvre si les participants ont accès à un canal de diffusion sécurisé}.
+
+Pour \( t \geq \frac{n}{2} \) (une majorité d’acteurs malveillants), les algorithmes MPC peuvent être mis en place, mais \textbf{sans garantie de justesse ni de sortie}.
+\subsection{Techniques}
+\subsubsection{Shamir Secret Sharing}
+Le \textbf{partage de clé secrète de Shamir} est l'un des algorithmes les plus connus dans le domaine de la SMC. Comme nous avons décidé de choisir celui-ci, nous reviendrons sur son fonctionnement dans la section \textit{Description détaillée du protocole SMC choisi} \ref{SSS}.
+
+\subsubsection{Private Set Intersection}
+
+Dans ce protocole, deux parties possèdent chacune un ensemble et souhaitent déterminer les éléments communs sans révéler d'informations sur leurs entrées.
+
+Pour simplifier, une fonction \( F_k(x) \) est utilisée où le résultat \textbf{semble aléatoire mais est fixe selon les valeurs \( k \) et \( x \)}.
+
+Les deux parties, Alice et Bob, possèdent respectivement les ensembles \( \{x_1, \ldots, x_n\} \) et \( \{y_1, \ldots, y_n\} \).
+
+Le protocole est défini comme suit :
+\begin{enumerate}
+    \item Alice choisit une clé \( k \).
+    \item Alice et Bob exécutent la fonction \( F \) i fois tel que :
+    \begin{enumerate}
+        \item Alice partage \( k \).
+        \item Bob fournit \( y_i \).
+        \item Les deux parties obtiennent le résultat de \( F_k(y_i) \).
+    \end{enumerate}
+    \item Alice calcule secrètement \( F_k(x_i) \) pour chacun de ses \( x_i \) et envoie la liste à Bob.
+    \item Bob calcule l'intersection entre la liste des \( F_k(x_i) \) et ses propres \( F_k(y_i) \), puis envoie les \( y_i \) qui sont dans l'intersection. Cela est possible car Bob connaît la relation entre ses \( y_i \) et ses \( F_k(y_i) \).
+\end{enumerate}
+
+Ce protocole permet à Alice et Bob de déterminer les éléments en commun dans leurs ensembles respectifs sans divulguer le contenu complet de leurs ensembles initiaux.
+
+\section{Bibliothèque de reconnaissance faciale}
+% Research a Face Recognition Library: Find and evaluate a suitable face recognition library to extract feature vectors from facial images. Understand how the library works and how it can be used to compare two face images (This usually involves comparing the Euclidean distance between two feature vectors to a predefined threshold).
+
+Nous avons comparé deux bibliothèques Python de reconnaissance faciale :
+\begin{itemize}
+    \item \textbf{Deepface} : \textit{Deepface est un outil léger de reconnaissance faciale et d'analyse des attributs du visage (âge, sexe, émotion et race) pour Python.}
+    \item \textbf{face\_recognition} : \textit{Face Recognition est une bibliothèque simple et efficace pour la reconnaissance faciale en Python, utilisant un modèle de pointe basé sur l'apprentissage profond avec dlib.}
+\end{itemize}
+
+Dans un premier temps, nous avons utilisé Deepface. Cependant, l'utilisation de cette bibliothèque semblait poser des problèmes de performances.
+
+Après des tests plus approfondis et la lecture de la documentation, nous en avons tiré les caractéristiques suivantes :
+\begin{itemize}
+    \item \textit{Deepface} :
+    \begin{itemize}[label=$\star$]
+        \item les \textit{embeddings} sont des vecteurs de 4096 éléments, ce qui entraîne des calculs très longs et demandant beaucoup de ressources ;
+        \item d'après \cite{article}, le temps de calcul pour comparer 2 visages est compris entre 0.19 et 1.18 seconde (la taille des images utilisées n'est pas précisée)
+    \end{itemize}
+    \item \textit{face-recognition} :
+    \begin{itemize}[label=$\star$]
+        \item les \textit{embeddings} sont des vecteurs de 128 éléments, ce qui entraîne une baisse de précision mais une nette amélioration des performances (on ne veut pas attendre 20 minutes avant de pouvoir entrer dans le bâtiment sécurisé)
+        %\item un script de \textit{benchmark} est fourni avec la bibliothèque.
+    \end{itemize}
+\end{itemize}
+
+Or, dans le cas d'usage choisi, l'authentification doit être rapide : on ne veut pas avoir à attendre plus d'une minute pour entrer dans un bureau ou un bâtiment. De plus, nos machines ne sont parfois pas capables d'absorber le coût des calculs avec Deepface. Si l'entreprise concernée est particulièrement sensible, il peut être intéressant d'explorer l'utilisation de Deepface avec les ressources appropriées.
+
+Suite à ces constats, nous avons décidé d'utiliser la bibliothèque \textbf{face\_recognition} dans notre solution pour sa praticité et sa rapidité de calcul.
+
+\section{Description détaillée du protocole SMC choisi} \label{SSS}
+%- on n'utilise plus les array numpy mais les array mpyc, bien qu'ils ne puissent pas contenir de flottants
+\subsection{Général}
+Parmi les différents algorithmes possibles, nous avons choisi d'utiliser le \textbf{partage de clé secrète de Shamir} (\textit{Shamir's Secret Sharing}), un des algorithmes les plus connus en la matière.
+
+Il s'agit d'un protocole utilisé lorsque la \textbf{majorité des participants sont honnêtes}. Ce protocole résout le problème d'un initiateur souhaitant partager un secret \( s \) entre \( n \) acteurs. On définit alors \( t \) de manière à ce qu'il faille au moins \( t + 1 \) personnes, chacune possédant une part du secret, pour reconstituer \( s \). En-dessous de ce nombre, il est impossible d'apprendre quoi que ce soit sur le secret \( s \). On parle alors d'un sous-ensemble de taille \( t + 1 \) ou plus, connu sous le nom de \textit{schéma de partage de secret à seuil \((t+1)\)-out-of-\(n\)}.
+
+Mathématiquement, cela repose sur le fait que pour chaque ensemble de \( t + 1 \) points distincts dans un plan à deux dimensions \((x_1, y_1), \ldots, (x_{t+1}, y_{t+1})\) avec des \( x_i \) uniques, il existe un unique polynôme \( q(x) \) de degré au plus \( t \) tel que \( q(x_i) = y_i \). \textbf{L'interpolation de Lagrange} permet de retrouver le polynôme à partir de ces points très simplement de la façon suivante :
+\[ L(X)=\sum_{j=0}^{n}y_i(\prod_{j=0,i\neq j}^n \frac{X - x_i}{x_j - x_i}) \]
+
+Ensuite, tous les calculs sont effectués dans un anneau fini \( \mathbb Z_p \) avec \( p \) un nombre premier supérieur au nombre de participants (\( p > n \)).
+
+Ainsi, pour partager le secret \( s \), l'initiateur choisit un polynôme aléatoire \( q(x) \) de degré au moins \( t \), avec \( q(0) = s \). Ensuite, pour chaque \( i = 1, \ldots, n \), l'initiateur attribue à la \( i \)-ème personne \( y_i = q(x_i) \). Cette démarche nécessite que \( p > n \), car dans un anneau fini, sinon plusieurs personnes pourraient se voir attribuer la même paire \( (x_i, q(x_i)) \).
+
+Pour reconstruire le polynôme, on utilise l'\textbf{interpolation Lagrangienne}, puis il ne nous reste plus qu'à résoudre \( q(0) \) pour obtenir \( s \). 
+
+La validité de cette méthode repose sur le fait que si nous n'avons pas suffisamment de points, alors il existe une infinité de solutions, car il est possible de choisir une infinité de points manquants.
+
+Pour illustrer cela, prenons un polynôme très simple : une ligne droite. La dimension de ce polynôme est donc $1$. D'après nos explications précédentes, il faudrait au moins deux points pour retrouver le polynôme. La propriété est facilement vérifiable car si nous n'avons qu'un seul point, il existe une infinité de lignes pouvant passer par celui-ci. Cela implique qu'il y a une infinité de solutions possibles et qu'il est impossible de retrouver le polynôme, donc le secret. Avec deux points, il n'existe qu'une seule ligne possible passant par ces deux points que l'on peut tracer.
+
+\subsection{Protocoles \& Calculs}
+Maintenant que nous avons explicité la base du protocole de \textit{partage de clé secrète de Shamir}, nous allons illustrer les méthodes permettant d'effectuer des calculs communs.
+
+Nous allons illustrer une des opérations qu'il est possible d'effectuer en s'appuyant sur ce protocole.\footnote{Notez tout de même que ce sont des exemples ne reflétant pas l'implémentation de l'addition dans la bibliothèques que nous avons choisi dans la partie suivante. En effet, malgré le fait d'avoir regardé dans le code source, nous ne sommes pas sur d'avoir compris le fonctionnement de la bibliothèque.}
+
+Les algorithmes proviennent du papier de recherche \cite{SSS_SMC} et du cours \cite{SMC_LIN}.
+
+
+\subsubsection{Addition}
+Commençons par décrire comment deux parties $P_1$, $P_2$, possédant respectivement les secrets $a$ et $b$, peuvent calculer communément le résultat de $a + b$ sans jamais échanger ces deux paramètres.
+
+Pour commencer, $P_1$ et $P_2$ doivent s'accorder sur deux points publics que nous appellerons $\alpha_1$ et $\alpha_2$.
+
+Ensuite, chaque partie $P_1$, $P_2$ crée son polynôme, respectivement $f_a(x) = a + a_1x$ et $f_b(x) = b + b_1x$, avec $a_1$ et $b_1$ des coefficients aléatoires.
+
+Chaque partie peut alors calculer puis échanger les points publics $\alpha_1$ et $\alpha_2$. 
+
+Les deux participants sont en possession de $f_a(\alpha_1)$, $f_a(\alpha_2)$, $f_b(\alpha_1)$ et $f_b(\alpha_2)$. Ainsi, par linéarité de l'addition, $f_{a+b}(x) = f_a(x) + f_b(x)$ donc si l'on effectue la somme suivante pour tous les $\alpha$ :
+\[
+    f_a(\alpha_i) + f_b(\alpha_i) = (a + b) + (a_1 + b_1)\alpha_i
+\]
+Chaque partie obtient alors deux points du polynôme $f_{a+ b}(x)$ qui est aussi de dimension $1$. Chaque partie est donc en capacité de calculer l'interpolation lagrangienne à partir de ces points et de retrouver le polynôme tel que $f_{a+b}(0) = a + b$ sans jamais avoir à partager ni $a$ ni $b$.
+
+Notons qu'il est alors possible pour $P_1$ et $P_2$ de retrouver le secret de l'autre partie à partir du résultat obtenu. Cependant, comme dit précédemment, MPC protège le calcul et non le résultat. Cela ne veut pas dire que la sortie ne révèle pas d’informations sensibles. MPC assure donc qu’aucune information ne sera révélée par le calcul.
+
+L'addition en n'utilisant que des clés partagées de Shamir est tout à fait possible.
+
+\paragraph{Exemple}
+Pour vérifier ce protocole, nous avons fait l'expérience avec un autre groupe.
+Soit $P_1$ et $P_2$ les deux groupes choisissant respectivement les secrets $a = 2$ et $b = 3$.
+
+Les points publics choisis sont $\alpha_1 = 4$ et $\alpha_2 = -3$.
+
+$P_1$ choisit un polynôme aléatoire $f_a(x) = 2 + 3x$ avec $a_1 = 3$ choisi aléatoirement. $P_2$ fait de même, $f_b(x) = 3 +5x$.
+
+$P_1$ calcule $f_a(\alpha_1) = 14$ et $f_a(\alpha_2) = -7$ tandis que $P_2$ calcule $f_b(\alpha_1) = 23$ et $f_b(\alpha_2) = -12$.
+
+Ensuite, $P_1$ et $P_2$ échangent le résultat de leurs calculs précédents.
+
+Les deux groupes peuvent alors calculer les points du polynôme résultant de l'addition des deux polynômes de départ :
+\[
+    (\alpha_1, f_a(\alpha_1) + f_b(\alpha_1)) = (\alpha_1, f_{a + b}(\alpha_1)) = (4, 37)
+\]
+\[
+    (\alpha_2, f_a(\alpha_2) + f_b(\alpha_2)) = (\alpha_2, f_{a + b}(\alpha_2)) = (-3, -19)
+\]
+
+Finalement, on utilise l'interpolation de Lagrange pour retrouver le polynôme :
+\[
+    L(X)=\sum_{j=0}^{1}y_i(\prod_{j=0,i\neq j}^1 \frac{X - x_i}{x_j - x_i}) = 8x + 5
+\]
+
+Il suffit alors de calculer $L(0)$ pour obtenir le résultat de $a + b$. Or, $L(0) = 5$, ce qui est bien l'addition de $2$ et $3$.
+
+\section{Critères et processus de sélection de la bibliothèque SMC}
+% Select and Set Up the Secure Multi-Party Computation Library: Install and configure the secure multi-party computation library you will be using.
+En effectuant nos recherches, nous avons trouvé plusieurs bibliothèques permettant de mettre en place des calculs multipartites sécurisés. En effet, trois principales bibliothèques sont apparues à de multiples reprises, que ce soit dans des papiers de recherche, Wikipédia ou par de simples recherches sur Internet :
+\begin{itemize}
+    \item MP-SPDZ \cite{mp-spdz}
+    \item Lattigo \cite{lattigo}
+    \item MPyC \cite{mpyc}\\
+\end{itemize}
+
+
+\textit{Lattigo} est une bibliothèque écrite en Go pour \textbf{le chiffrement homomorphe} (\textit{HE - Homomorphic Encryption}). Le chiffrement homomorphe permet de réaliser des \textbf{calculs sur des données chiffrées sans avoir à les déchiffrer}, ce qui est crucial pour préserver la confidentialité des données lors de traitements délégués à des tiers. \textit{Lattigo} implémente plusieurs schémas de chiffrement homomorphe, y compris le chiffrement basé sur les réseaux (\textit{lattice-based encryption}). Cependant, le \textbf{chiffrement homomorphe n'est pas exactement similaire au calcul multipartite sécurisé} et donc ne correspond pas exactement à ce que l'on recherche.
+
+\textbf{MP-SPDZ} (\textit{Multi-Protocol SPDZ}) est une bibliothèque pour le calcul multipartite sécurisé et l'évaluation de performance.
+
+Les deux premières bibliothèques que nous avons examinées sont extrêmement complètes et ont une documentation conséquente. Cependant, elles nécessitent un temps d'apprentissage considérable et une excellente compréhension de la cryptographie moderne. Cela ne correspondait pas forcément à nos besoins et à notre niveau d'utilisation.
+
+À l'inverse, la bibliothèque \textit{MPyC}, écrite en \textit{Python}, propose des fonctions \textbf{simples d'utilisation} et inclut de \textbf{nombreux exemples} dans sa documentation. 
+
+\textit{MPyC} (Multiparty Computation in Python) se distingue par sa facilité d'intégration et son approche pédagogique, rendant accessible des concepts complexes de la cryptographie à des utilisateurs non experts. Malgré ses lacunes documentaires, elle offre un bon point de départ pour manipuler les techniques de calcul multipartite sécurisé (SMC).
+
+En résumé, malgré les nécessités de devoir parfois plonger dans le code source pour pallier les insuffisances de la documentation, \textit{MPyC} reste tout de même un très bon choix pour commencer à manipuler la SMC et s'interfacer avec la bibliothèques de reconnaissance faciale.
+
+\section{Expérimentations et résultats}
+% Implement Secure Authentication: Use the secure multi-party computation library to implement secure facial authentication.
+% Analyze Experimental Results: Present the accuracy of the authentication, for example, using a ROC curve. Evaluate the speed of the authentication process (compared it to a non-secure model).
+
+% faux positifs
+% faux négatifs
+% temps au pire cas / meilleur cas
+
+% si la personne est dans la base, ne pas immédiatement révéler le résultat pour ne pas révéler d'informations avec le temps de calcul (continuer de comparer aux visages restants) (option --not-secure)
+Dans le cadre de ce projet, nous avons développé sept scripts permettant de tester une application concrète de l'utilisation de SMC et de la comparer avec une solution sans SMC. Ces scripts sont disponibles via notre dépôt GitHub\footnote{https://github.com/Jul0ow/14-secure-biometric-auth-SMC}. Une documentation complète des scripts est également disponible sur ce dépôt.
+
+
+\subsection{Implémentation SMC}
+Nous avons commencé par implémenter un script de reconnaissance faciale par \textbf{SMC}. Pour la partie reconnaissance faciale, nous avons utilisé la bibliothèque \textit{Face Recognition}\footnote{https://pypi.org/project/face-recognition/} décrite précédemment, ainsi que \textit{MPyC} pour la partie SMC. Ce script est très basique et calcule simplement la distance euclidienne entre deux images données. Ce calcul s'effectue entre deux parties, chacune connaissant l'une des deux images. En pratique, le script est exécuté deux fois, une fois pour chaque partie.
+
+La fonction principale de ce script, celle, qui va calculer la distance euclidienne, est la suivante :
+\begin{lstlisting}[language=Python]
+async def compute_from_face_encoding(face_encoding):
+    embedding = secfpx.array(face_encoding)
+
+    # Recuperation de l'image de la seconde partie
+    user, server = mpc.input(embedding)
+
+    # print('Computing the distance')
+    distance = np.subtract(user, server)
+    # print('Computing the euclidian distance')
+    # print('Multiply')
+    euclidian = np.multiply(distance, distance)
+    # print('Sum')
+    euclidian = np.sum(euclidian)
+
+    # print('Printing the result')
+    euclidian = await mpc.output(euclidian)
+    # print('Sqrt')
+    euclidian = np.sqrt(euclidian)
+    # print('Result', euclidian)
+    return euclidian
+\end{lstlisting}
+
+Cette fonction prend en argument l'\textit{encodage} de l'image connue. Elle convertit la liste \textit{Python} en un tableau de type \textit{SecFxp}\footnote{https://mpyc.readthedocs.io/en/latest/mpyc.html\#mpyc.runtime.Runtime.SecFxp}. Lors de la première itération, nous utilisions des tableaux \textit{Numpy} ; en adoptant cette version, nous avons \textbf{réduit le temps de calcul par image par un facteur de 9}.
+
+La distance euclidienne est ensuite comparée à une valeur seuil pour déterminer si les deux images contiennent le même visage. Si la distance euclidienne est inférieure à cette valeur seuil, l'algorithme considère que le visage a été reconnu.
+
+L'entièreté de ce script est disponible dans le fichier \textit{main.py} de nos sources.
+
+\subsection{Évaluation des performances}
+Pour déterminer l'efficacité de notre algorithme ainsi que de la valeur seuil, nous avons mis en place un outil de test : \textit{benchmark.py}. Ce script teste notre algorithme sur toutes les images d'une base de données. Chaque image de la base de données est comparée avec toutes les autres images de la base, et le script vérifie que la prédiction de notre algorithme est correcte. Comme notre algorithme fonctionne sur un calcul impliquant deux parties, le script de \textit{benchmark} s'exécute une seconde fois pour simuler la seconde partie.
+
+% Résultats
+Nous avons la capacité d'effectuer une comparaison entre deux images en moins de 0.03 secondes. Pour atteindre cette vitesse, nous avons externalisé l'extraction des \textit{encodings} de chaque image. En effet, nous stockons les \textit{encodings} des images dans un fichier \textit{pickle}\footnote{https://docs.python.org/fr/3/library/pickle.html} qui est chargé par le script de \textit{benchmark}.
+% Opération d'extraction des encodings long donc pickle
+
+Nous avons pu déterminer que la valeur seuil optimale pour notre algorithme était proche de \textit{0.575}. Pour trouver cette valeur, nous avons étudié le pourcentage de réussite de l'algorithme avec différentes valeurs seuils. On considère une prédiction comme réussie quand l'algorithme arrive à déterminer si le visage est celui d'une personne connue dans la base de données.
+
+Nous avons donc testé différentes valeurs seuils sur un jeu de 70 images (ce qui correspond à 4900 comparaisons) et obtenu les résultat ci-dessous.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[scale=0.65]{images/sucess_rate_evolution.png}
+    \caption{Courbe d'évolution du taux de succès par valeur seuil}
+    \label{fig:rate_evolution}
+\end{figure}
+On peut noter que le pourcentage de réussite est élevé, même avec une valeur seuil faible. Ceci est dû au fait que la plupart des comparaisons doivent mener à un visage non reconnu. Une valeur seuil faible n'impactera pas les comparaisons négatives.
+
+\subsection{Exemple d'implémentation}
+Afin de mieux visualiser une application concrète de notre algorithme, nous avons créé deux démonstrateurs. Le premier est un serveur qui possède une base de données contenant différents visages. Le second est un client qui possède une image de visage et souhaite savoir si le visage contenu dans son image appartient à une personne connue du serveur.
+
+Pour les mêmes raisons d'optimisation que pour le \textit{benchmark}, la base de données du serveur contient directement les \textit{encodings} des visages, et non les images elles-mêmes. Cette base de données a un format différent de celle utilisée par le \textit{benchmark}. En effet, le serveur n'a pas besoin de savoir à quelle personne correspond chaque image ; il ne possède donc que les \textit{faces\_encodings}. Ce détail permet de réduire l'impact que pourrait avoir un potentiel serveur semi-honnête.
+
+Grâce au SMC, le calcul peut être effectué sans que le client connaisse les visages présents sur la base de données du serveur et sans que le serveur connaisse le visage du client.
+
+Le serveur attend continuellement un client qu'il traite, puis attend un autre client. Le client se connecte au serveur et récupère le résultat (une distance euclidienne) du SMC. Si cette valeur est inférieure à une valeur seuil (déterminée grâce au benchmark), alors le visage est considéré comme reconnu.
+
+Pour des raisons de sécurités le l'algorithme ne s'arrête pas une fois l'image reconnu ce qui nous permet d'avoir un temps d'éxécution très similaire peu importe l'image du client.
+\subsection{Comparaison avec et sans SMC}
+Afin d'étudier le coût de l'utilisation du \textit{calcul multipartite sécurisée}, nous avons créé un autre script (\textit{without\_smc\_benchmark.py}) de \textit{benchmark}. Celui-ci effectue les mêmes calculs que le précédent, mais sans utiliser la bibliothèque \textit{MPyC} et avec une seule partie.
+
+Le script de \textit{benchmark} avec SMC peut procéder à 22 201 comparaison en 153,905 secondes. Le script sans SMC effectue les mêmes calculs en 1,65 secondes, soit en 93 fois moins de temps.
+
+De cette courte analyse, on peut déterminer que l'utilisation du \textbf{SMC ralentit considérablement la vitesse de calcul} et augmente, par conséquent, le temps d'exécution. Ce résultat n'est pas surprenant, puisque pour effectuer le calcul en SMC, les différentes parties doivent échanger leurs résultats pour chaque opération, ralentissant grandement le calcul.
+
+\section{Défis rencontrés au cours du projet}
+Durant ce projet, nous avons rencontré de nombreuses difficultés.
+
+Tout d’abord, la phase de recherche d’une bibliothèque a présenté des obstacles. En effet, nous avons dû comprendre leurs les spécificités, parfois avec des documentations conséquentes et complexes. Pour les comparer et faire un choix par la suite, nous avons dû nous baser sur des critères de sélection tels que la performance, la compatibilité entre les bibliothèques (SMC et reconnaissance faciale) et avec notre environnement de travail et nos connaissances sur les sujets. Cette phase n'a pas été simplifiée avec la lecture de la documentation.
+
+Une des bibliothèques de reconnaissance faciale, par exemple, ajoutée au processus de SMC, provoquait des dénis de service dû à la longueur de ses vecteurs et de la quantité de mémoire vive requise. Ces calculs pouvaient être très consommateurs en ressources, ce qui rendait le code inutilisable pour un usage pratique.
+
+De plus, il a fallu comprendre le fonctionnement de chaque bibliothèque afin de les utiliser. Comme expliqué précédemment, certaines bibliothèques n'était pas clairement documenté concernant l'implémentation, et notamment \textit{MPyC}. Cela rendait délicate leur utilisation, tout comme la compréhension des différentes fonctions à utiliser et à implémenter dans notre solution. L'absence d'exemples pratiques pour un système client-serveur laissait supposer que ce n'était pas le but premier de la bibliothèque.
+
+Les problématiques liées à la documentation nous ont poussés à tester et à expérimenter par nous-mêmes pour comprendre comment intégrer les différentes bibliothèques dans notre projet. Cela nous a ralenti dans la mesure où nous avons fait quelques erreurs au départ et avons du faire de longues recherches avant d'arriver à une solutions fonctionnelle.
+
+Ainsi, nous avons rencontré quelques obstacles lors du développement de notre solution. Cela a ralenti le processus en augmentant grandement notre temps de recherche. Cependant, cela nous a permis de comprendre au mieux les technologies rencontrées tout en développant des compétences précieuses.
+
+% Comprendre la SMC / Choisir une bibliothèque (et comprendre les différences entre les bibliothèques) / Comprendre la bibliothèque  / Ressources demandées par les algos
+\section{Mesures futures recommandées pour améliorer le projet}
+Après plusieurs tests de notre code, nous avons remarqué que parcourir toutes les images de la base actuelle de 13 000 photographies prenait environ 4 minutes. Ce résultat est significatif, car il montre que notre programme serait donc potentiellement utilisable sur un téléphone. En effet, dans le cadre de la reconnaissance faciale sur smartphone, il n'est pas nécessaire d'avoir une immense base de photos, seulement 2 à 3 images maximum du propriétaire dédiées à la reconnaissance faciale sont stockées dessus. Avec notre code, il serait donc possible d'avoir un résultat presque immédiat, rendant notre solutions utilisable dans des environnements comme les téléphones portables où la rapidité est cruciale. 
+
+L'utilisation du SMC présente quelques avantages. En effet, la sécurisation des calculs permet d'éviter une fuite de données sensibles depuis le serveur. En  effet, les photos d'individus représentent, pour le RGPD, des données à caractère personnel dans la mesure où elles peuvent permettre d'identifier directement la personne concernée. Le SMC garantit que les données du serveur ne soient pas connues par l'utilisateur et que l'image envoyée par l'utilisateur ne soit pas connue par le serveur. Cette séparation stricte des données est essentielle pour éviter une interception et protéger la vie privée des individus.
+
+Cependant, le processus est assez lent et complexe. Au lieu d'avoir un résultat quasi instantané, comme ce qui pourrait être espéré, sur de grandes bases de données cela peut prendre plusieurs minutes. Si l'on prend l'exemple d'une entreprise d'au moins 15 000 employés, le temps nécessaire pour obtenir un résultat avec notre solution est d'au moins 4 minutes. On suppose aussi que la photo de chaque employé est présente sur le serveur. Cette durée est significative et peut poser des problématiques dans des situations où le temps de réponse est essentiel. De plus, le fait que le programme soit gourmand en ressources limite la scalabilité de notre solution, notamment sur des bases de données volumineuses.
+
+Ainsi, pour l'avenir, il serait intéressant de déterminer les différentes possibilités permettant d'optimiser notre code. Nous pourrions par exemple tester de nouvelles bibliothèques en approfondissant la lecture de la documentation ou en précisant nos critères de recherche pour trouver des solutions plus adaptées à nos besoins. Une autre approche serait de collaborer avec des experts en optimisation pour rendre notre solutions plus rapide et efficace.
+
+Finalement, la preuve de concept que nous avons mise en place est fonctionnelle et sa capacité à être utilisée dans le monde réel va dépendre de la taille de la base de données. Nous avons comparé nos résultats avec les fonctionnalités de plusieurs bibliothèques de reconnaissance faciale et, sans surprise, les calculs non sécurisés permettent une plus grande scalabilité de la base de données. Cette comparaison nous a permis de mieux comprendre les limites de notre approche et d'identifier des pistes d'amélioration futures. De plus, nous pourrions, pour améliorer la sécurité ajouter plusieurs serveurs afin de séparer encore plus la donnée de départ.
+
+Ainsi, bien que notre solution présente des résultats très concluants en terme de sécurisation des données, des améliorations sont nécessaires pour accélérer le processus et améliorer son évolutivité. En continuant à explorer de nouvelles méthodes et technologies pour optimiser notre code, nous pouvons espérer développer une solution fiable, efficace, sécurisée et utilisable dans des environnements professionnels nécessitant de grandes bases de données.
+
+
+%limites du projet : qu'est ce qu'on ne peut pas faire ? quels usages ne correspondent pas ? (ex : si les calculs prennent 10 minutes, on ne peut pas l'utiliser comme authentification de téléphone)
+%peut on optimiser les calculs ?
+%cas d'usage de notre reconnaissance faciale
+%tester de nouvelle bibliothèques et investissant plus de temps dans des bibliothèques complexe comme mp-spdz
+
+% Reflect: Reflect on the process of performing secure authentication with secure multi-party computation. Consider the advantages and disadvantages of using secure multi-party computation for authentication. Think about potential other cryptographic methods to perform secure authentication.
+\newpage
+\section{Conclusion}
+Ce projet nous a permis d'aborder en profondeur le sujet du calcul multipartite sécurisé (SMC) entre plusieurs participants. Notre solution fonctionne et est applicable dans le cas de bases de données réduites, offrant ainsi une preuve de concept solide pour l'authentification biométrique sécurisée. Cependant, elle présente certaines limitations en termes de scalabilité.
+
+Lorsqu'il s'agit de grandes entreprises ou de bases de données volumineuses, notre solution devient difficilement applicable en raison des exigences élevées en matière de ressources computationnelles et de temps de calcul. Les algorithmes de SMC, bien que sécurisés, sont souvent coûteux en termes de performance, et l'ajout de bibliothèques complexes de reconnaissance faciale peut encore aggraver ce problème. Les vecteurs de caractéristiques longs et la complexité des calculs entraînent une consommation de ressources significative, rendant la solution moins pratique pour des applications à grande échelle.
+
+Pour rendre cette technologie viable pour des entreprises de plus grande envergure, des optimisations supplémentaires et des améliorations en termes d'efficacité computationnelle sont nécessaires. Cela pourrait inclure l'exploration d'algorithmes de SMC plus optimisés, l'utilisation de techniques de compression des données, ou le développement de méthodes hybrides combinant SMC avec d'autres approches de sécurité. En dépit de ces défis, notre projet a démontré le potentiel du calcul multipartite sécurisé pour protéger la confidentialité des données biométriques dans des scénarios à petite échelle, ouvrant ainsi la voie à des développements futurs dans ce domaine crucial.
+
+\newpage
+%mettre les sources au-dessus de la biblio
+\printbibliography
+
+\end{document}

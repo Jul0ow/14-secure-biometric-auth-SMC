@@ -2,7 +2,7 @@
 ## Generals information
 The `src` folder contains the source code of our project. The source code is made of **7** scripts, **more information about
 each script can be found directly in their sources files**:
-- `main.py`, a small script to compute Euclidean distance between two images using **SMC** (using MPyC library)
+- `main.py`, a small script to compute _Euclidean distance_ between two images using **SMC** (using _MPyC_ library)
 - `serializing.py`, this script will extract all the face encodings of all the images in a directory and store them in a
 *pickle* file. The *pickle* file will be the dataset used by the *benchmark* script and the *demo_server*. We do the
 extraction of face encodings in this part and not in the other script to increase compute speed.

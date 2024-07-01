@@ -1,0 +1,325 @@
+\documentclass[9pt]{beamer}
+
+\usepackage[french]{babel}
+\usepackage{svg}
+\usetheme[progressbar=frametitle]{metropolis}
+\usepackage{appendixnumberbeamer}
+\usepackage{listings}
+\usepackage{csquotes}
+\usepackage{xurl}
+\usepackage{hyperref}
+
+\usepackage[T1]{fontenc}
+
+\usefonttheme{default}
+\usepackage{palatino}
+\usepackage[style=ieee, backend=biber]{biblatex}
+\setbeamertemplate{bibliography item}[triangle]
+
+\DeclareBibliographyCategory{cited}
+\AtEveryCitekey{\addtocategory{cited}{\thefield{entrykey}}}
+
+\usepackage[default]{opensans}
+\useinnertheme{rectangles}
+\setbeamertemplate{caption}[numbered]
+
+\addbibresource{Bib.bib}
+\nocite{*}
+
+\usepackage{datetime}
+\newdate{date}{17}{04}{2024}
+
+\date[\displaydate{date}]{}
+
+%\titlegraphic{%
+%    \centering
+%    \includegraphics[width=0.8\textwidth]{imgs/logoURANUSfull.png}
+%}
+
+\makeatletter
+\setbeamertemplate{title page}{
+  \begin{minipage}[b][\paperheight]{\textwidth}
+    \vfill%
+    \ifx\inserttitle\@empty\else\usebeamertemplate*{title}\fi
+    \ifx\insertsubtitle\@empty\else\usebeamertemplate*{subtitle}\fi
+    \usebeamertemplate*{title separator}
+    \ifx\beamer@shortauthor\@empty\else\usebeamertemplate*{author}\fi
+    \usebeamertemplate*{date}
+    \ifx\insertinstitute\@empty\else\usebeamertemplate*{institute}\fi
+    \vfill
+    \ifx\inserttitlegraphic\@empty\else\inserttitlegraphic\fi
+    \vspace*{1cm}
+  \end{minipage}
+}
+\makeatother
+
+\title[LT]{Authentification biométrique par calcul multipartite sécurisé}
+\author{Matthieu Colin | Alexandra Delin | Jules Diaz | Maëlys Rimbert}
+\date{July 2024}
+\institute{EPITA}
+
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.75,0.75,0.75}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2
+}
+\lstset{style=mystyle}
+
+\begin{document}
+
+\begin{frame}
+	\titlepage
+\end{frame}
+
+\begin{frame}{Introduction}
+    \begin{itemize}
+        \item Deux participants :
+        \begin{enumerate}
+            \item un serveur ayant une base de données de visages autorisés
+            \item un client fournissant les données biométriques de son visage
+        \end{enumerate}
+        \item Objectif : déterminer si le client est connu par la base de données
+        \item Solution en Python car il existe un large choix de bibliothèques de reconnaissance faciale
+    \end{itemize}
+    \begin{figure}
+        \centering
+        \includegraphics[scale=0.08]{images_slides/Python-logo-notext.svg.png}
+        \caption{Python [\ref{src:python-logo}]}
+        \label{fig:enter-label}
+    \end{figure}
+\end{frame}
+
+\begin{frame}{Face Recognition vs Deepface}
+\begin{columns}[T] % align columns
+    \begin{column}{.48\textwidth}
+        \begin{center}
+            \begin{figure}
+            \centering
+            \includegraphics[scale=0.3]{images_slides/face_reco.png}
+            \caption{Démonstration de face-recognition [\ref{src:face-reco-demo}]}
+            \label{fig:enter-label}
+            \end{figure}
+        \end{center}
+    \end{column}%
+    \hfill%
+    \begin{column}{.48\textwidth}
+        \begin{center}
+            \begin{figure}
+            \centering
+            \includegraphics[scale=0.08]{images_slides/deepface.png}
+            \caption{Logo Deepface [\ref{src:deepface-logo}]}
+            \label{fig:enter-label}
+            \end{figure}
+        \end{center}
+    \end{column}%
+    \end{columns}
+\begin{itemize}
+    \item Bibliothèques Python de reconnaissance faciale
+    \item Fonctionnalités similaires, dont l'extraction d'\textit{embeddings} correspondant à des visages
+    \item \textit{Embeddings} de 128 et 4096 éléments
+    \item Problèmes de performance avec Deepface : nos machines n'étaient pas assez puissantes pour supporter les calculs sur les vecteurs
+\end{itemize}
+Nous avons choisi de travailler avec \textbf{face-recognition} afin de simplifier les opérations et de réduire le temps de calcul.
+    
+\end{frame}
+
+\begin{frame}{Calcul Multipartite Sécurisé}
+    
+\end{frame}
+
+% Jules
+\begin{frame}{Partage de clé secrète de Shamir}
+    \begin{itemize}[<+- | alert@+>]
+        \item \textit{Shamir's Secret Sharing}
+        \begin{itemize}
+            \item Permet de \textbf{scinder un secret en plusieurs morceaux} appelées \textit{parties}
+            \item Chaque \textit{partie} ne donne \textbf{aucune information} sur le secret en lui même
+            \item L'algorithme permet de définir un seuil indiquant le nombre de \textit{parties} minimum afin de pouvoir reconstituer le secret 
+        \end{itemize}
+        \item Principe simple basé sur :
+        \begin{itemize}
+            \item Les propriétés des polynômes
+            \item L'interpolation de Lagrange
+        \end{itemize}
+        \item Opération possible sur les parties
+        \begin{itemize}
+            \item Addition
+            \item Multiplication par un scalaire
+            \item Multiplication
+            \item \ldots
+        \end{itemize}
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Exemple - Seuil à deux}
+    \begin{itemize}
+        \item Prenons le secret $s = -1$
+        \item Formons le polynôme $q(x) = 2x - 1$
+        \begin{itemize}
+            \item $2$ un coefficient aléatoire
+            \item $-1$ notre secret
+        \end{itemize}
+        \item Exemple de points partageables :
+        \begin{itemize}
+            \item (1, 1)
+            \item (2, 3)
+        \end{itemize}
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Exemple - Visualisation}
+    \begin{figure}[ht]
+        \begin{minipage}[b]{0.45\linewidth}
+            \centering
+            \includegraphics[width=\textwidth]{images/infinite_sol.png}
+            \caption{Infinité de solutions}
+            \label{fig:infinite-sol}
+        \end{minipage}
+        \hspace{0.5cm}
+        \pause
+        \begin{minipage}[b]{0.45\linewidth}
+            \centering
+            \includegraphics[width=\textwidth]{images/unique_sol.png}
+            \caption{Solution unique}
+            \label{fig:b}
+        \end{minipage}
+    \end{figure}
+\end{frame}
+
+\begin{frame}{Exemple - Construction du polynôme}
+    \begin{itemize}
+        \item <1-> Interpolation Lagrangienne :\\
+        \[ L(X)=\sum_{j=0}^{n}y_i(\prod_{j=0,i\neq j}^n \frac{X - x_i}{x_j - x_i}) \]\\
+        \[ q(x) = 1 * \frac{x-2}{1-2} + 3 * \frac{x - 1}{2 - 1} =  2x - 1\]
+        \item <2-> Récupération du secret :\\
+        \[ q(0) = -1 \]
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{MPyC}
+    \begin{itemize}[<+- | alert@+>]
+        \item \textit{Multiparty Computation in Python}
+        \begin{itemize}
+            \item Panel considérable de fonctionnalités
+            \item Simple d'utilisation 
+            \item Exemples clairs
+            \item Bibliothèque maintenue
+        \end{itemize}
+        \item S'articule facilement avec les bibliothèques de reconnaissances faciales
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Expérimentation \& Résultat}
+    \textbf{7} scripts Python
+    \begin{itemize}
+        \item Distance euclidienne entre deux images utilisant le \textbf{SMC}
+        \item Script d'évaluation de performances de l'algorithme MPyC
+        \item Extraction des \textit{faces encodings} d'un jeu d'image
+        \item Comparaison entre la bibliothèque \textit{DeepFace} et \textit{Face Recognition}
+        \item Démonstrateur (Autorisation par reconnaissance faciale)
+        \begin{itemize}
+            \item Serveur
+            \item Client
+        \end{itemize}
+    \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Expérimentation \& Résultat}
+    Calcule de la distance euclidienne avec la bibliothèque MPyC
+    \begin{scriptsize}
+        \begin{lstlisting}[showstringspaces=false, language=python]
+    embedding = secfpx.array(face_encoding)
+
+    # Recuperation de l'image de la seconde partie
+    user, server = mpc.input(embedding)
+
+    # print('Computing the distance')
+    distance = np.subtract(user, server)
+    # print('Computing the euclidian distance')
+    # print('Multiply')
+    euclidian = np.multiply(distance, distance)
+    # print('Sum')
+    euclidian = np.sum(euclidian)
+
+    # print('Printing the result')
+    euclidian = await mpc.output(euclidian)
+    # print('Sqrt')
+    euclidian = np.sqrt(euclidian)
+    # print('Result', euclidian)
+    return euclidian
+        \end{lstlisting}
+    \end{scriptsize}
+\end{frame}
+
+\begin{frame}{Évaluation des performances}
+    Il faut moins de \textbf{30 ms} pour vérifier si deux images contiennent la même personne.
+
+    Nous avons déterminé que la valeur de seuil la plus optimal était proche de \textbf{0,575}
+    \begin{figure}[H]
+        \centering
+        \includegraphics[scale=0.4]{images/sucess_rate_evolution.png}
+        \caption{Courbe d'évolution du taux de succès par valeur seuil}
+        \label{fig:sucess_rate_evolution}
+    \end{figure}
+\end{frame}
+
+\begin{frame}{Défis rencontrés}
+
+    \begin{itemize}
+        \item Recherche de bibliothèques
+        \item Documentations peu claires et complexes
+        \item Calculs très consommateurs de ressources
+        \item Difficultés pour intégrer les fonctions des bibliothèques à notre code
+    \end{itemize}
+    
+\end{frame}
+
+\begin{frame}{Mesures futures}
+    \begin{itemize}
+        \item Potentiellement utilisable sur smartphone
+        \item Solution sécurisée
+        \item Processus lent à optimiser
+        \item Scalabilité limitée
+        \item Pas utilisable en l'état dans des grandes entreprises
+        \item Il reste néanmoins possible de développer une solution plus rapide, fiable et sécurisée
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Conclusion}
+    \begin{itemize}
+        \item Un sujet très complexe permettant la protection des données
+        \item De multiples applications dans la vraie vie
+        \item Une preuve de concept fonctionnelle
+        \item Chiffrement homomorphe
+    \end{itemize}
+\end{frame}
+
+\begin{frame}[allowframebreaks]
+    \frametitle{Sources}
+    \begin{itemize}
+        \label{src:face-reco-demo}\item Démonstration de face-recognition : \url{https://pypi.org/project/face-recognition/}
+        \label{src:deepface-logo}\item Logo Deepface : \url{https://pypi.org/project/deepface/}
+        \item \label{src:python-logo} Logo Python : \url{https://fr.m.wikipedia.org/wiki/Fichier:Python-logo-notext.svg}
+    \end{itemize}
+\end{frame}
+
+\printbibliography
+
+\end{document}
